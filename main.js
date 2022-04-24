@@ -53,48 +53,39 @@ class Invader extends Entity {
 }
 
 class Missile extends Entity {
-  constructor(x, y) {
-    super("img/missile.png", x, y, 10, 30, 0, 0);
-    this.displacement = 3; //movement speed
+  constructor(x, y, dx, dy) {
+    super("img/missile.png", x, y, 10, 30, dx, -dy);
   }
 
-  move() {
-    this.dy = -this.displacement;
-    super.move();
+  draw(ctx) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    if (this.dy === 0) {
+      ctx.rotate(90 * (Math.PI/180));
+    }
+    else {
+      ctx.rotate(Math.atan(this.dx/-this.dy));
+    }
+    ctx.translate(-this.x, -this.y);
+    super.draw(ctx);
+    ctx.restore();
   }
 }
 
 class Tank extends Entity {
   constructor(x, y) {
     super("img/tank.png", x, y, 50, 50, 0, 0);
-    this.displacement = 5; //movement speed
     this.missileFired = false;
 
     //checks for key presses
     document.addEventListener("keydown", this.keyDownHandler.bind(this));
-    document.addEventListener("keyup", this.keyUpHandler.bind(this));
   }
 
   keyDownHandler(e) {
-    if (e.key === "Right" || e.key === "ArrowRight") {
-      //move to the right
-      this.dx = this.displacement;
-    } else if (e.key === "Left" || e.key === "ArrowLeft") {
-      //move to the left
-      this.dx = -this.displacement;
-    } else if (e.key === "Space" || e.key === " ") {
+    if (e.key === "Space" || e.key === " ") {
       if (!this.missileFired) {
         this.shootMissile();
       }
-    }
-  }
-
-  keyUpHandler(e) {
-    //end movement
-    if (e.key === "Right" || e.key === "ArrowRight") {
-      this.dx = 0;
-    } else if (e.key === "Left" || e.key === "ArrowLeft") {
-      this.dx = 0;
     }
   }
 
@@ -104,7 +95,7 @@ class Tank extends Entity {
     //animates missiles
     if (this.missileFired) {
       //ensures missile does not go over canvas bounds
-      if (this.missile.y < 0) {
+      if (this.missile.y < 0 || this.missile.y > 600 || this.missile.x < 0 || this.missile.x > 480) {
         this.missileFired = false;
       }
       this.missile.draw(ctx);
@@ -112,20 +103,8 @@ class Tank extends Entity {
     }
   }
 
-  move(canvasWidth) {
-    super.move();
-
-    //ensures tank does not go over canvas bounds
-    if (this.x + this.width > canvasWidth) {
-      this.x = canvasWidth - this.width;
-    }
-    if (this.x < 0) {
-      this.x = 0;
-    }
-  }
-
   shootMissile() {
-    this.missile = new Missile (this.x + 20, this.y - (this.height/2) + 10);
+    this.missile = new Missile (this.x + 20, this.y + 10, 1, 0);
     this.missileFired = true;
   }
 
@@ -146,26 +125,64 @@ class Tank extends Entity {
 class Game {
   constructor(canvas) {
 
-    this.tank = new Tank(canvas.width / 2 - 25, canvas.height - 60);
+    this.tank = new Tank(this.getXCoordinate(), this.getYCoordinate());
+
     this.invadersHit = 0; //score
     this.createInvader();
   }
 
   createInvader() {
-    this.invader = new Invader(this.random(0, canvas.width - 50),
-      this.random(canvas.height - 600, canvas.height - 150));
+    this.invader = new Invader(this.getXCoordinate(), this.getYCoordinate());
   }
 
   writeText(ctx, invadersMessage) {
-    //outputs game message
+    //outputs all text
     ctx.font = "16px Arial";
     ctx.fillStyle = "#ffffff";
-    ctx.fillText(invadersMessage, 8, 20);
+    ctx.fillText(invadersMessage, 161, 25);
+
+    ctx.fillText("0", 2, 597);
+    ctx.fillText("1", 35, 597);
+    ctx.fillText("2", 75, 597);
+    ctx.fillText("3", 115, 597);
+    ctx.fillText("4", 155, 597);
+    ctx.fillText("5", 195, 597);
+    ctx.fillText("6", 235, 597);
+    ctx.fillText("7", 275, 597);
+    ctx.fillText("8", 315, 597);
+    ctx.fillText("9", 355, 597);
+    ctx.fillText("10", 390, 597);
+    ctx.fillText("11", 430, 597);
+    ctx.fillText("12", 460, 597);
+
+    ctx.fillText("1", 2, 565);
+    ctx.fillText("2", 2, 525);
+    ctx.fillText("3", 2, 485);
+    ctx.fillText("4", 2, 445);
+    ctx.fillText("5", 2, 405);
+    ctx.fillText("6", 2, 365);
+    ctx.fillText("7", 2, 325);
+    ctx.fillText("8", 2, 285);
+    ctx.fillText("9", 2, 245);
+    ctx.fillText("10", 2, 205);
+    ctx.fillText("11", 2, 165);
+    ctx.fillText("12", 2, 125);
+    ctx.fillText("13", 2, 85);
+    ctx.fillText("14", 2, 45);
+
   }
 
   random(lowerBound, upperBound) {
     //returns random number between bounds
     return Math.floor(Math.random() * (upperBound - lowerBound + 1)) + lowerBound;
+  }
+
+  getXCoordinate() {
+    return 15 + (40 * this.random(0, 10));
+  }
+
+  getYCoordinate() {
+    return 15 + (40 * this.random(0, 13));
   }
 
   playGame(canvas, ctx) {
@@ -188,22 +205,20 @@ let game = new Game(canvas);
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  let p = 0;
-
   for (let x = 0; x <= canvas.width; x += 40) {
-    ctx.moveTo(x + p, p);
-    ctx.lineTo(x + p, canvas.height + p);
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, canvas.height);
   }
 
-  for (let x = 0; x <= canvas.height; x += 40) {
-    ctx.moveTo(p, x + p);
-    ctx.lineTo(canvas.width + p, x + p);
+  for (let y = 0; y <= canvas.height; y += 40) {
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
   }
+
   ctx.strokeStyle = "black";
   ctx.stroke();
 
   game.tank.draw(ctx, canvas.height);
-  game.tank.move(canvas.width);
 
   game.playGame(canvas, ctx);
 
