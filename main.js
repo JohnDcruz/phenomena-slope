@@ -1,48 +1,15 @@
 class Entity {
-  constructor(src, x, y, width, height, dx, dy) {
-    //defines all basic properties of game entity
+  constructor(src, x, y, width, height) {
     this.image = new Image(width, height);
     this.image.src = src;
     this.x = x;
     this.y = y;
     this.width = width;
     this.height = height;
-    this.dx = dx; //displacement in the x direction
-    this.dy = dy; //displacement in the y direction
   }
 
   draw(ctx) {
     ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
-  }
-
-  move() {
-    this.x += this.dx;
-    this.y += this.dy;
-  }
-
-  intersects(other) {
-    //checks if two game entities intersect
-    let tw = this.width;
-    let th = this.height;
-    let rw = other.width;
-    let rh = other.height;
-    if (rw <= 0 || rh <= 0 || tw <= 0 || th <= 0) {
-      return false;
-    }
-    let tx = this.x;
-    let ty = this.y;
-    let rx = other.x;
-    let ry = other.y;
-    rw += rx;
-    rh += ry;
-    tw += tx;
-    th += ty;
-    return (
-      (rw < rx || rw > tx) &&
-      (rh < ry || rh > ty) &&
-      (tw < tx || tw > rx) &&
-      (th < ty || th > ry)
-    );
   }
 }
 
@@ -52,52 +19,9 @@ class Invader extends Entity {
   }
 }
 
-class Missile extends Entity {
-  constructor(x, y, dx, dy) {
-    super("img/missile.png", x, y, 10, 30, dx, -dy);
-  }
-
-  draw(ctx) {
-    ctx.save();
-    ctx.translate(this.x, this.y);
-    ctx.rotate(Math.atan(this.dx/-this.dy));
-    ctx.translate(-this.x, -this.y);
-    super.draw(ctx);
-    ctx.restore();
-  }
-}
-
 class Tank extends Entity {
   constructor(x, y) {
     super("img/tank.png", x, y, 50, 50, 0, 0);
-    this.missileFired = false;
-  }
-
-  draw(ctx, canvasHeight) {
-    super.draw(ctx);
-
-    //animates missiles
-    if (this.missileFired) {
-      //ensures missile does not go over canvas bounds
-      if (this.missile.y < 0 || this.missile.y > 600 || this.missile.x < 0 || this.missile.x > 480) {
-        this.missileFired = false;
-      }
-      this.missile.draw(ctx);
-      this.missile.move();
-    }
-  }
-
-  checkMissileCollision(invader) {
-    let collided = false;
-
-    if (this.missileFired) {
-      if (this.missile.intersects(invader)) {
-        collided = true;
-        this.missileFired = false;
-      }
-    }
-
-    return collided;
   }
 }
 
@@ -108,6 +32,7 @@ class Game {
 
     this.invadersHit = 0;
     this.createInvader();
+    this.coordinates = {};
   }
 
   createInvader() {
@@ -177,14 +102,18 @@ class Game {
 
     let inc = 0;
 
-    while (inc < 30) {
-      x2 += Math.abs(1/slope) * 40;
+    this.coordinates[x2] = y2;
+
+    while (inc < 1000) {
+      x2 += Math.abs(1/slope);
       if (slope >= 0) {
-        y2 -= 40;
+        y2 -= 1;
       } else {
-        y2 += 40;
+        y2 += 1;
       }
       inc += 1;
+
+      this.coordinates[Math.round(x2)] = Math.round(y2);
     }
 
     ctx.save();
@@ -197,14 +126,27 @@ class Game {
     ctx.restore();
   }
 
-  playGame(canvas, ctx) {
-    //animates invaders, deletes if they are hit or reach end of canvas
-    if (this.tank.checkMissileCollision(this.invader)) {
-      this.invadersHit += 1;
-      this.createInvader();
-    } else {
-      this.invader.draw(ctx);
+  checkCollision() {
+
+    let collidesTank = false;
+    let collidesInvader = false;
+
+    for (const [x, y] of Object.entries(this.coordinates)) {
+
+      console.log("Tank: ", this.tank.x, this.tank.y);
+      console.log("Invader: ", this.invader.x, this.invader.y);
+      console.log("Coordinate: ", x, y);
+
+      if (parseInt(this.tank.x) === parseInt(x) && parseInt(this.tank.y) + 90 === parseInt(y.toString())) {
+        collidesTank = true;
+      }
+      if (parseInt(this.invader.x) === parseInt(x) && parseInt(this.invader.y) - 90 === parseInt(y.toString())) {
+        collidesInvader = true;
+      }
     }
+
+    console.log(collidesTank, collidesInvader);
+    return collidesTank && collidesInvader;
   }
 }
 
@@ -236,8 +178,7 @@ function draw() {
   game.drawLine(canvas, ctx, slope, intercept);
 
   game.tank.draw(ctx, canvas.height);
-
-  game.playGame(canvas, ctx);
+  game.invader.draw(ctx);
 
   game.writeText(ctx);
   window.requestAnimationFrame(draw);
@@ -297,9 +238,8 @@ function clicked(e){
   let y = e.layerY;
 
   if(x>390 && x<460 && y>10 && y<80){
-    if (!game.tank.missileFired) {
-      game.tank.missile = new Missile (game.tank.x + 20, game.tank.y + 10, 1/slope, 1);
-      game.tank.missileFired = true;
+    if (game.checkCollision()) {
+      console.log("hit!");
     }
   }
 
