@@ -203,14 +203,24 @@ drawHeader();
 const interfaceCanvas = document.getElementById("interfaceCanvas")
 const interfaceCtx = interfaceCanvas.getContext("2d");
 
-let mAdd = new Image(20, 20);
-mAdd.src = "img/plus-solid.svg"
-let bAdd = new Image(20, 20);
-bAdd.src = "img/plus-solid.svg"
-let mMinus = new Image(20, 20);
-mMinus.src = "img/minus-solid.svg"
-let bMinus = new Image(20, 20);
-bMinus.src = "img/minus-solid.svg"
+let mAddSmall = new Image(20, 20);
+mAddSmall.src = "img/plus-solid.svg"
+let bAddSmall = new Image(20, 20);
+bAddSmall.src = "img/plus-solid.svg"
+let mMinusSmall = new Image(20, 20);
+mMinusSmall.src = "img/minus-solid.svg"
+let bMinusSmall = new Image(20, 20);
+bMinusSmall.src = "img/minus-solid.svg"
+
+let mAddBig = new Image(20, 20);
+mAddBig.src = "img/plus-solid.svg"
+let bAddBig = new Image(20, 20);
+bAddBig.src = "img/plus-solid.svg"
+let mMinusBig = new Image(20, 20);
+mMinusBig.src = "img/minus-solid.svg"
+let bMinusBig = new Image(20, 20);
+bMinusBig.src = "img/minus-solid.svg"
+
 let fire = new Image(50, 50);
 fire.src = "img/rocket-solid.svg"
 
@@ -218,15 +228,23 @@ function drawInterface() {
   interfaceCtx.clearRect(0, 0, 480, 100);
   interfaceCtx.font = "16px Arial";
   interfaceCtx.fillStyle = "#ffffff";
-  interfaceCtx.fillText("y = " + slope.toFixed(2) + " + " + intercept.toFixed(2), 10, 35);
-  interfaceCtx.fillText("score:" + game.invadersHit, 10, 75);
-  interfaceCtx.fillText("m", 240, 35);
-  interfaceCtx.fillText("b", 240, 75);
-  interfaceCtx.drawImage(mAdd, 270, 22, 15, 15);
-  interfaceCtx.drawImage(bAdd, 270, 62, 15, 15);
-  interfaceCtx.drawImage(mMinus, 210, 22, 15, 15);
-  interfaceCtx.drawImage(bMinus, 210, 62, 15, 15);
-  interfaceCtx.drawImage(fire, 400, 25, 50, 50);
+  interfaceCtx.fillText("y = " + slope.toFixed(2) + " + " + intercept.toFixed(2), 20, 35);
+  interfaceCtx.fillText("score: " + game.invadersHit, 45, 75);
+  interfaceCtx.fillText("m", 240, 52);
+  interfaceCtx.fillText("b", 242, 82);
+  interfaceCtx.fillText(".1", 270, 27);
+  interfaceCtx.fillText("1", 300, 27);
+  interfaceCtx.fillText(".1", 210, 27);
+  interfaceCtx.fillText("1", 180, 27);
+  interfaceCtx.drawImage(mAddSmall, 270, 40, 15, 15);
+  interfaceCtx.drawImage(bAddSmall, 270, 70, 15, 15);
+  interfaceCtx.drawImage(mMinusSmall, 210, 40, 15, 15);
+  interfaceCtx.drawImage(bMinusSmall, 210, 70, 15, 15);
+  interfaceCtx.drawImage(mAddBig, 300, 40, 15, 15);
+  interfaceCtx.drawImage(bAddBig, 300, 70, 15, 15);
+  interfaceCtx.drawImage(mMinusBig, 180, 40, 15, 15);
+  interfaceCtx.drawImage(bMinusBig, 180, 70, 15, 15);
+  interfaceCtx.drawImage(fire, 375, 25, 50, 50);
 
   window.requestAnimationFrame(drawInterface);
 }
@@ -239,7 +257,7 @@ function clicked(e){
 
   if(x>390 && x<460 && y>10 && y<80){
     if (game.checkCollision()) {
-      console.log("hit!");
+      game.invadersHit += 1;
     }
   }
 
@@ -255,8 +273,24 @@ function clicked(e){
     intercept += 0.1;
   }
 
-  if(x>200 && x<230 && y>60 && y<80){
+  if(x>175 && x<195 && y>60 && y<80){
     intercept -= 0.1;
+  }
+
+  if(x>295 && x<315 && y>20 && y<40){
+    slope += 1;
+  }
+
+  if(x>175 && x<195 && y>20 && y<40){
+    slope -= 1;
+  }
+
+  if(x>295 && x<315 && y>60 && y<80){
+    intercept += 1;
+  }
+
+  if(x>200 && x<230 && y>60 && y<80){
+    intercept -= 1;
   }
 }
 
