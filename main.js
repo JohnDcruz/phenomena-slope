@@ -11,6 +11,31 @@ class Entity {
   draw(ctx) {
     ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
   }
+
+  intersects(other) {
+    let tw = this.width;
+    let th = this.height;
+    let rw = other.width;
+    let rh = other.height;
+    if (rw <= 0 || rh <= 0 || tw <= 0 || th <= 0) {
+      return false;
+    }
+    let tx = this.x;
+    let ty = this.y;
+    let rx = other.x;
+    let ry = other.y;
+    rw += rx;
+    rh += ry;
+    tw += tx;
+    th += ty;
+    return (
+        (rw < rx || rw > tx) &&
+        (rh < ry || rh > ty) &&
+        (tw < tx || tw > rx) &&
+        (th < ty || th > ry)
+    );
+  }
+
 }
 
 class Invader extends Entity {
@@ -22,6 +47,12 @@ class Invader extends Entity {
 class Tank extends Entity {
   constructor(x, y) {
     super("img/tank.png", x, y, 50, 50, 0, 0);
+  }
+}
+
+class Missile extends Entity {
+  constructor(x, y) {
+    super("img/missile.png", x, y, 10, 30);
   }
 }
 
@@ -104,10 +135,15 @@ class Game {
 
     this.coordinates[x2] = y2;
 
-    while (inc < 1000) {
-      x2 += Math.abs(1/slope);
-      if (slope >= 0) {
+    while (inc < 1000) { //TODO: extend line properly
+      if (slope !== 0) {
+        x2 += Math.abs(1/slope);
+      }
+
+      if (slope > 0) {
         y2 -= 1;
+      } else if (slope === 0) {
+        x2 += 1;
       } else {
         y2 += 1;
       }
@@ -133,19 +169,17 @@ class Game {
 
     for (const [x, y] of Object.entries(this.coordinates)) {
 
-      console.log("Tank: ", this.tank.x, this.tank.y);
-      console.log("Invader: ", this.invader.x, this.invader.y);
-      console.log("Coordinate: ", x, y);
+      let missile = new Missile(x, y);
 
-      if (parseInt(this.tank.x) === parseInt(x) && parseInt(this.tank.y) + 90 === parseInt(y.toString())) {
+      if (missile.intersects(this.tank)) {
         collidesTank = true;
       }
-      if (parseInt(this.invader.x) === parseInt(x) && parseInt(this.invader.y) - 90 === parseInt(y.toString())) {
+
+      if (missile.intersects(this.invader)) {
         collidesInvader = true;
       }
     }
 
-    console.log(collidesTank, collidesInvader);
     return collidesTank && collidesInvader;
   }
 }
@@ -228,8 +262,8 @@ function drawInterface() {
   interfaceCtx.clearRect(0, 0, 480, 100);
   interfaceCtx.font = "16px Arial";
   interfaceCtx.fillStyle = "#ffffff";
-  interfaceCtx.fillText("y = " + slope.toFixed(2) + " + " + intercept.toFixed(2), 20, 35);
-  interfaceCtx.fillText("score: " + game.invadersHit, 45, 75);
+  interfaceCtx.fillText("y = " + slope.toFixed(1) + " + " + intercept.toFixed(1), 40, 35);
+  interfaceCtx.fillText("score: " + game.invadersHit, 55, 75);
   interfaceCtx.fillText("m", 240, 52);
   interfaceCtx.fillText("b", 242, 82);
   interfaceCtx.fillText(".1", 270, 27);
@@ -255,42 +289,42 @@ function clicked(e){
   let x = e.layerX;
   let y = e.layerY;
 
-  if(x>390 && x<460 && y>10 && y<80){
+  if(x>370 && x<430 && y>10 && y<80){
     if (game.checkCollision()) {
       game.invadersHit += 1;
     }
   }
 
-  if(x>260 && x<290 && y>20 && y<40){
+  if(x>260 && x<290 && y>40 && y<60){
     slope += 0.1;
   }
 
-  if(x>200 && x<230 && y>20 && y<40){
+  if(x>200 && x<230 && y>40 && y<60){
     slope -= 0.1;
   }
 
-  if(x>260 && x<290 && y>60 && y<80){
+  if(x>260 && x<290 && y>70 && y<90){
     intercept += 0.1;
   }
 
-  if(x>175 && x<195 && y>60 && y<80){
+  if(x>200 && x<230 && y>70 && y<90){
     intercept -= 0.1;
   }
 
-  if(x>295 && x<315 && y>20 && y<40){
-    slope += 1;
+  if(x>295 && x<315 && y>40 && y<60){
+    slope += 1.0;
   }
 
-  if(x>175 && x<195 && y>20 && y<40){
-    slope -= 1;
+  if(x>175 && x<195 && y>40 && y<60){
+    slope -= 1.0;
   }
 
-  if(x>295 && x<315 && y>60 && y<80){
-    intercept += 1;
+  if(x>295 && x<315 && y>70 && y<90){
+    intercept += 1.0;
   }
 
-  if(x>200 && x<230 && y>60 && y<80){
-    intercept -= 1;
+  if(x>175 && x<195 && y>70 && y<90){
+    intercept -= 1.0;
   }
 }
 
