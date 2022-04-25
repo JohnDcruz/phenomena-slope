@@ -60,12 +60,7 @@ class Missile extends Entity {
   draw(ctx) {
     ctx.save();
     ctx.translate(this.x, this.y);
-    if (this.dy === 0) {
-      ctx.rotate(90 * (Math.PI/180));
-    }
-    else {
-      ctx.rotate(Math.atan(this.dx/-this.dy));
-    }
+    ctx.rotate(Math.atan(this.dx/-this.dy));
     ctx.translate(-this.x, -this.y);
     super.draw(ctx);
     ctx.restore();
@@ -76,17 +71,6 @@ class Tank extends Entity {
   constructor(x, y) {
     super("img/tank.png", x, y, 50, 50, 0, 0);
     this.missileFired = false;
-
-    //checks for key presses
-    document.addEventListener("keydown", this.keyDownHandler.bind(this));
-  }
-
-  keyDownHandler(e) {
-    if (e.key === "Space" || e.key === " ") {
-      if (!this.missileFired) {
-        this.shootMissile();
-      }
-    }
   }
 
   draw(ctx, canvasHeight) {
@@ -101,11 +85,6 @@ class Tank extends Entity {
       this.missile.draw(ctx);
       this.missile.move();
     }
-  }
-
-  shootMissile() {
-    this.missile = new Missile (this.x + 20, this.y + 10, 1, 0);
-    this.missileFired = true;
   }
 
   checkMissileCollision(invader) {
@@ -123,11 +102,11 @@ class Tank extends Entity {
 }
 
 class Game {
-  constructor(canvas) {
+  constructor() {
 
     this.tank = new Tank(this.getXCoordinate(), this.getYCoordinate());
 
-    this.invadersHit = 0; //score
+    this.invadersHit = 0;
     this.createInvader();
   }
 
@@ -135,11 +114,10 @@ class Game {
     this.invader = new Invader(this.getXCoordinate(), this.getYCoordinate());
   }
 
-  writeText(ctx, invadersMessage) {
+  writeText(ctx) {
     //outputs all text
     ctx.font = "16px Arial";
     ctx.fillStyle = "#ffffff";
-    ctx.fillText(invadersMessage, 161, 25);
 
     ctx.fillText("0", 2, 597);
     ctx.fillText("1", 35, 597);
@@ -185,8 +163,18 @@ class Game {
     return 15 + (40 * this.random(0, 13));
   }
 
-  playGame(canvas, ctx) {
+  drawLine(ctx, x1, y1, x2, y2) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.strokeStyle = "red";
+    ctx.lineWidth = 5;
+    ctx.stroke();
+    ctx.restore();
+  }
 
+  playGame(canvas, ctx) {
     //animates invaders, deletes if they are hit or reach end of canvas
     if (this.tank.checkMissileCollision(this.invader)) {
       this.invadersHit += 1;
@@ -197,13 +185,17 @@ class Game {
   }
 }
 
-const canvas = document.getElementById("myCanvas");
+const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
 let game = new Game(canvas);
+let slope = 1;
+let intercept = 0;
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.beginPath();
 
   for (let x = 0; x <= canvas.width; x += 40) {
     ctx.moveTo(x, 0);
@@ -218,12 +210,69 @@ function draw() {
   ctx.strokeStyle = "black";
   ctx.stroke();
 
+  game.drawLine(ctx, 0, 0, 100, 100);
+
   game.tank.draw(ctx, canvas.height);
+
+  if (!game.tank.missileFired) {
+    game.tank.missile = new Missile (game.tank.x + 20, game.tank.y + 10, slope, 1);
+    game.tank.missileFired = true;
+  }
 
   game.playGame(canvas, ctx);
 
-  game.writeText(ctx,"Invaders shot down: " + game.invadersHit);
+  game.writeText(ctx);
   window.requestAnimationFrame(draw);
 }
 
 draw();
+
+const headerCanvas = document.getElementById("headerCanvas")
+const headerCtx = headerCanvas.getContext("2d");
+function drawHeader() {
+  headerCtx.clearRect(0, 0, 480, 100);
+  headerCtx.font = "16px Arial";
+  headerCtx.fillStyle = "#ffffff";
+  headerCtx.fillText("The properties of a line, slope and y-intercept, are related in the", 10, 25);
+  headerCtx.fillText("formula y=mx+b, where m is the slope and b is the y-intercept.", 10, 45);
+  headerCtx.fillText("Find the formula for a line that intersects both the spaceship and", 10, 65);
+  headerCtx.fillText("UFO so that the spaceship can accurately fire a missile!", 10, 85);
+  window.requestAnimationFrame(drawHeader);
+}
+drawHeader();
+
+const interfaceCanvas = document.getElementById("interfaceCanvas")
+const interfaceCtx = interfaceCanvas.getContext("2d");
+
+function drawInterface() {
+  interfaceCtx.clearRect(0, 0, 480, 100);
+  interfaceCtx.font = "16px Arial";
+  interfaceCtx.fillStyle = "#ffffff";
+  interfaceCtx.fillText("y = " + slope + " + " + intercept, 10, 35);
+  interfaceCtx.fillText("score:" + game.invadersHit, 10, 75);
+  interfaceCtx.fillText("m", 240, 35);
+  interfaceCtx.fillText("b", 240, 75);
+
+  let mAdd = new Image(20, 20);
+  mAdd.src = "img/plus-solid.svg"
+  interfaceCtx.drawImage(mAdd, 270, 22, 15, 15);
+
+  let bAdd = new Image(20, 20);
+  bAdd.src = "img/plus-solid.svg"
+  interfaceCtx.drawImage(bAdd, 270, 62, 15, 15);
+
+  let mMinus = new Image(20, 20);
+  mMinus.src = "img/minus-solid.svg"
+  interfaceCtx.drawImage(mMinus, 210, 22, 15, 15);
+
+  let bMinus = new Image(20, 20);
+  bMinus.src = "img/minus-solid.svg"
+  interfaceCtx.drawImage(bMinus, 210, 62, 15, 15);
+
+  let fire = new Image(50, 50);
+  fire.src = "img/rocket-solid.svg"
+  interfaceCtx.drawImage(fire, 400, 25, 50, 50);
+
+  window.requestAnimationFrame(drawInterface);
+}
+drawInterface();

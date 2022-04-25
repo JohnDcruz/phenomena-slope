@@ -89,7 +89,8 @@ canvas {
 
 .stars,
 .twinkling,
-.clouds {
+.clouds,
+.input {
   position: absolute;
   top: 0;
   left: 0;
@@ -110,7 +111,6 @@ canvas {
   z-index: 1;
 
   -moz-animation: move-twink-back 200s linear infinite;
-  -ms-animation: move-twink-back 200s linear infinite;
   -o-animation: move-twink-back 200s linear infinite;
   -webkit-animation: move-twink-back 200s linear infinite;
   animation: move-twink-back 200s linear infinite;
@@ -121,7 +121,6 @@ canvas {
   z-index: 2;
 
   -moz-animation: move-clouds-back 200s linear infinite;
-  -ms-animation: move-clouds-back 200s linear infinite;
   -o-animation: move-clouds-back 200s linear infinite;
   -webkit-animation: move-clouds-back 200s linear infinite;
   animation: move-clouds-back 200s linear infinite;
