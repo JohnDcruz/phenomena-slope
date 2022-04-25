@@ -111,7 +111,14 @@ class Game {
   }
 
   createInvader() {
-    this.invader = new Invader(this.getXCoordinate(), this.getYCoordinate());
+    let x = this.getXCoordinate();
+    let y = this.getYCoordinate();
+
+    while (x === this.tank.x) {
+      x = this.getXCoordinate();
+    }
+
+    this.invader = new Invader(x, y);
   }
 
   writeText(ctx) {
@@ -163,10 +170,26 @@ class Game {
     return 15 + (40 * this.random(0, 13));
   }
 
-  drawLine(ctx, x1, y1, x2, y2) {
+  drawLine(canvas, ctx, slope, intercept) {
+
+    let x2 = 0;
+    let y2 = canvas.height - (intercept * 40);
+
+    let inc = 0;
+
+    while (inc < 30) {
+      x2 += Math.abs(1/slope) * 40;
+      if (slope >= 0) {
+        y2 -= 40;
+      } else {
+        y2 += 40;
+      }
+      inc += 1;
+    }
+
     ctx.save();
     ctx.beginPath();
-    ctx.moveTo(x1, y1);
+    ctx.moveTo(0, canvas.height - (intercept * 40));
     ctx.lineTo(x2, y2);
     ctx.strokeStyle = "red";
     ctx.lineWidth = 5;
@@ -210,14 +233,9 @@ function draw() {
   ctx.strokeStyle = "black";
   ctx.stroke();
 
-  game.drawLine(ctx, 0, 0, 100, 100);
+  game.drawLine(canvas, ctx, slope, intercept);
 
   game.tank.draw(ctx, canvas.height);
-
-  if (!game.tank.missileFired) {
-    game.tank.missile = new Missile (game.tank.x + 20, game.tank.y + 10, slope, 1);
-    game.tank.missileFired = true;
-  }
 
   game.playGame(canvas, ctx);
 
@@ -244,35 +262,63 @@ drawHeader();
 const interfaceCanvas = document.getElementById("interfaceCanvas")
 const interfaceCtx = interfaceCanvas.getContext("2d");
 
+let mAdd = new Image(20, 20);
+mAdd.src = "img/plus-solid.svg"
+let bAdd = new Image(20, 20);
+bAdd.src = "img/plus-solid.svg"
+let mMinus = new Image(20, 20);
+mMinus.src = "img/minus-solid.svg"
+let bMinus = new Image(20, 20);
+bMinus.src = "img/minus-solid.svg"
+let fire = new Image(50, 50);
+fire.src = "img/rocket-solid.svg"
+
 function drawInterface() {
   interfaceCtx.clearRect(0, 0, 480, 100);
   interfaceCtx.font = "16px Arial";
   interfaceCtx.fillStyle = "#ffffff";
-  interfaceCtx.fillText("y = " + slope + " + " + intercept, 10, 35);
+  interfaceCtx.fillText("y = " + slope.toFixed(2) + " + " + intercept.toFixed(2), 10, 35);
   interfaceCtx.fillText("score:" + game.invadersHit, 10, 75);
   interfaceCtx.fillText("m", 240, 35);
   interfaceCtx.fillText("b", 240, 75);
-
-  let mAdd = new Image(20, 20);
-  mAdd.src = "img/plus-solid.svg"
   interfaceCtx.drawImage(mAdd, 270, 22, 15, 15);
-
-  let bAdd = new Image(20, 20);
-  bAdd.src = "img/plus-solid.svg"
   interfaceCtx.drawImage(bAdd, 270, 62, 15, 15);
-
-  let mMinus = new Image(20, 20);
-  mMinus.src = "img/minus-solid.svg"
   interfaceCtx.drawImage(mMinus, 210, 22, 15, 15);
-
-  let bMinus = new Image(20, 20);
-  bMinus.src = "img/minus-solid.svg"
   interfaceCtx.drawImage(bMinus, 210, 62, 15, 15);
-
-  let fire = new Image(50, 50);
-  fire.src = "img/rocket-solid.svg"
   interfaceCtx.drawImage(fire, 400, 25, 50, 50);
 
   window.requestAnimationFrame(drawInterface);
 }
+
+interfaceCanvas.addEventListener("mousedown", clicked, false);
+
+function clicked(e){
+  let x = e.layerX;
+  let y = e.layerY;
+
+  if(x>390 && x<460 && y>10 && y<80){
+    if (!game.tank.missileFired) {
+      game.tank.missile = new Missile (game.tank.x + 20, game.tank.y + 10, 1/slope, 1);
+      game.tank.missileFired = true;
+    }
+  }
+
+  if(x>260 && x<290 && y>20 && y<40){
+    slope += 0.1;
+  }
+
+  if(x>200 && x<230 && y>20 && y<40){
+    slope -= 0.1;
+  }
+
+  if(x>260 && x<290 && y>60 && y<80){
+    intercept += 0.1;
+  }
+
+  if(x>200 && x<230 && y>60 && y<80){
+    intercept -= 0.1;
+  }
+}
+
+
 drawInterface();
