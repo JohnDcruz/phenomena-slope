@@ -1,4 +1,4 @@
-class Entity {
+class Entity { //provides basic functionality for game objects
   constructor(src, x, y, width, height) {
     this.image = new Image(width, height);
     this.image.src = src;
@@ -57,7 +57,7 @@ class Missile extends Entity {
     this.dy = -dy;
   }
 
-  move() {
+  move() { //missile follows line's slope
     this.x += Math.abs(this.dx);
 
     if (this.dx < 0) {
@@ -67,7 +67,7 @@ class Missile extends Entity {
     }
   }
 
-  draw(ctx) {
+  draw(ctx) { //rotates the missile properly to follow the line
     ctx.save();
     ctx.translate(this.x, this.y);
     if (this.dx < 0) {
@@ -81,18 +81,17 @@ class Missile extends Entity {
   }
 }
 
-class Game {
+class Game { //holds game functionality
   constructor() {
 
     this.tank = new Tank(this.getXCoordinate(), this.getYCoordinate());
 
+    //objects on the same x-plane would result in an impossible equation for y=mx+b
     let x = this.getXCoordinate();
     let y = this.getYCoordinate();
-
     while (x === this.tank.x) {
       x = this.getXCoordinate();
     }
-
     this.invader = new Invader(x, y);
 
     this.invadersHit = 0;
@@ -120,25 +119,41 @@ class Game {
 
   }
 
-  random(lowerBound, upperBound) {
-    //returns random number between bounds
+  random(lowerBound, upperBound) { //returns random number between bounds
     return Math.floor(Math.random() * (upperBound - lowerBound + 1)) + lowerBound;
   }
 
-  getXCoordinate() {
+  getXCoordinate() { //returns x-coordinate following grid
     return 15 + (40 * this.random(0, 10));
   }
 
-  getYCoordinate() {
+  getYCoordinate() { //returns y-coordinate following grid
     return 15 + (40 * this.random(0, 13));
   }
 
-  drawLine(canvas, ctx, slope, intercept) { //TODO: fix line disappearing
+  drawGrid(canvas, ctx) { //draws grid with 40 pixels between each line
+    for (let x = 0; x <= canvas.width; x += 40) {
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvas.height);
+    }
+
+    for (let y = 0; y <= canvas.height; y += 40) {
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+    }
+
+    ctx.strokeStyle = "black";
+    ctx.stroke();
+  }
+
+  drawLine(canvas, ctx, slope, intercept) { //draws line following slope/intercept
 
     let x2 = 0;
     let y2 = canvas.height - (intercept * 40);
 
     let inc = 0;
+
+    //maxY will make sure the line is drawn until the end of the canvas is reached
     let maxY = 600;
 
     if (intercept < 0 || slope < 0) {
@@ -183,26 +198,14 @@ function draw() {
 
   ctx.beginPath();
 
-  for (let x = 0; x <= canvas.width; x += 40) {
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, canvas.height);
-  }
-
-  for (let y = 0; y <= canvas.height; y += 40) {
-    ctx.moveTo(0, y);
-    ctx.lineTo(canvas.width, y);
-  }
-
-  ctx.strokeStyle = "black";
-  ctx.stroke();
-
+  game.drawGrid(canvas, ctx);
   game.drawLine(canvas, ctx, slope, intercept);
 
-  if (!game.collidesInvader) {
+  if (!game.collidesInvader) { //draw invader if not hit
     game.invader.draw(ctx);
   }
 
-  if (!game.collidesTank) {
+  if (!game.collidesTank) { //draw tank if not hit
     game.tank.draw(ctx, canvas.height);
   }
 
@@ -215,18 +218,19 @@ function draw() {
       game.collidesInvader = true;
     }
 
+    //ends round if missile leaves canvas and both objects not hit
     if (game.missile.y < 0 || game.missile.y > 600 || game.missile.x < 0 || game.missile.x > 480) {
       game.checkInProgress = false;
       game.collidesTank = false;
       game.collidesInvader = false;
-    } else {
+    } else { //continues to animate missile
       game.missile.move();
       game.missile.draw(ctx);
     }
 
   }
 
-  if (game.collidesInvader && game.collidesTank) {
+  if (game.collidesInvader && game.collidesTank) { //ends round, increments score if both objects hit, resets positions
     game.invadersHit += 1;
     game.tank = new Tank(game.getXCoordinate(), game.getYCoordinate());
     game.invader = new Invader(game.getXCoordinate(), game.getYCoordinate());
@@ -241,6 +245,7 @@ function draw() {
 
 draw();
 
+//adds information about the game to the top of the screen
 const headerCanvas = document.getElementById("headerCanvas")
 const headerCtx = headerCanvas.getContext("2d");
 function drawHeader() {
@@ -255,6 +260,7 @@ function drawHeader() {
 }
 drawHeader();
 
+//provides user controls for the game
 const interfaceCanvas = document.getElementById("interfaceCanvas")
 const interfaceCtx = interfaceCanvas.getContext("2d");
 
@@ -292,15 +298,17 @@ function drawInterface() {
 
 interfaceCanvas.addEventListener("mousedown", clicked, false);
 
-function clicked(e){
+function clicked(e){ //detects user click on controls and performs appropriate action
   let x = e.layerX;
   let y = e.layerY;
 
-  if(x>370 && x<430 && y>10 && y<80 && !game.checkInProgress){
+  if(x>370 && x<430 && y>10 && y<80 && !game.checkInProgress){ //fires missile if one not active
     if (slope === 0) {
       game.missile = new Missile(0, canvas.height - (intercept * 40), 1, 0);
     } else if (intercept < 0) {
       game.missile = new Missile(Math.abs((intercept * 40)/slope), canvas.height, 1/slope, 1);
+    } else if (canvas.height - (intercept * 40) < 0) {
+      game.missile = new Missile(Math.abs(((15-intercept) * 40)/slope), 0, 1/slope, 1);
     } else {
       game.missile = new Missile(0, canvas.height - (intercept * 40), 1/slope, 1);
     }
