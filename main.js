@@ -12,11 +12,6 @@ class Entity {
     ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
   }
 
-  move() {
-    this.x += 1;
-    this.y += 1;
-  }
-
   intersects(other) {
     let tw = this.width;
     let th = this.height;
@@ -63,14 +58,23 @@ class Missile extends Entity {
   }
 
   move() {
-    this.x += this.dx;
-    this.y += this.dy;
+    this.x += Math.abs(this.dx);
+
+    if (this.dx < 0) {
+      this.y -= this.dy;
+    } else {
+      this.y += this.dy;
+    }
   }
 
   draw(ctx) {
     ctx.save();
     ctx.translate(this.x, this.y);
-    ctx.rotate(Math.atan(this.dx/-this.dy));
+    if (this.dx < 0) {
+      ctx.rotate(Math.atan(this.dx/-this.dy) + Math.PI);
+    } else{
+      ctx.rotate(Math.atan(this.dx/-this.dy));
+    }
     ctx.translate(-this.x, -this.y);
     super.draw(ctx);
     ctx.restore();
@@ -82,14 +86,6 @@ class Game {
 
     this.tank = new Tank(this.getXCoordinate(), this.getYCoordinate());
 
-    this.invadersHit = 0;
-    this.createInvader();
-
-    this.collidesInvader = false;
-    this.collidesTank = false;
-  }
-
-  createInvader() {
     let x = this.getXCoordinate();
     let y = this.getYCoordinate();
 
@@ -98,6 +94,11 @@ class Game {
     }
 
     this.invader = new Invader(x, y);
+
+    this.invadersHit = 0;
+
+    this.collidesInvader = false;
+    this.collidesTank = false;
   }
 
   writeText(ctx) {
@@ -106,33 +107,16 @@ class Game {
     ctx.fillStyle = "#ffffff";
 
     ctx.fillText("0", 2, 597);
-    ctx.fillText("1", 35, 597);
-    ctx.fillText("2", 75, 597);
-    ctx.fillText("3", 115, 597);
-    ctx.fillText("4", 155, 597);
-    ctx.fillText("5", 195, 597);
-    ctx.fillText("6", 235, 597);
-    ctx.fillText("7", 275, 597);
-    ctx.fillText("8", 315, 597);
-    ctx.fillText("9", 355, 597);
+    for (let n = 1; n < 10; n++) {
+      ctx.fillText(n.toString(), 35 + (40 * (n - 1)), 597);
+    }
     ctx.fillText("10", 390, 597);
     ctx.fillText("11", 430, 597);
     ctx.fillText("12", 460, 597);
 
-    ctx.fillText("1", 2, 565);
-    ctx.fillText("2", 2, 525);
-    ctx.fillText("3", 2, 485);
-    ctx.fillText("4", 2, 445);
-    ctx.fillText("5", 2, 405);
-    ctx.fillText("6", 2, 365);
-    ctx.fillText("7", 2, 325);
-    ctx.fillText("8", 2, 285);
-    ctx.fillText("9", 2, 245);
-    ctx.fillText("10", 2, 205);
-    ctx.fillText("11", 2, 165);
-    ctx.fillText("12", 2, 125);
-    ctx.fillText("13", 2, 85);
-    ctx.fillText("14", 2, 45);
+    for (let n = 1; n < 15; n++) {
+      ctx.fillText(n.toString(), 2, 565 - (40 * (n-1)));
+    }
 
   }
 
@@ -256,7 +240,7 @@ function drawHeader() {
   headerCtx.fillText("Find the formula for a line that intersects both the spaceship and", 10, 25);
   headerCtx.fillText("UFO so that the missile hits both of them.", 10, 45);
   headerCtx.fillText("Use the controls below to increment or decrement the slope and", 10, 65);
-  headerCtx.fillText("intercept, and press the rocket to see if you're correct!", 10, 85);
+  headerCtx.fillText("intercept, either by 0.1 or 1, and press the rocket to fire!", 10, 85);
   window.requestAnimationFrame(drawHeader);
 }
 drawHeader();
@@ -264,24 +248,10 @@ drawHeader();
 const interfaceCanvas = document.getElementById("interfaceCanvas")
 const interfaceCtx = interfaceCanvas.getContext("2d");
 
-let mAddSmall = new Image(20, 20);
-mAddSmall.src = "img/plus-solid.svg"
-let bAddSmall = new Image(20, 20);
-bAddSmall.src = "img/plus-solid.svg"
-let mMinusSmall = new Image(20, 20);
-mMinusSmall.src = "img/minus-solid.svg"
-let bMinusSmall = new Image(20, 20);
-bMinusSmall.src = "img/minus-solid.svg"
-
-let mAddBig = new Image(20, 20);
-mAddBig.src = "img/plus-solid.svg"
-let bAddBig = new Image(20, 20);
-bAddBig.src = "img/plus-solid.svg"
-let mMinusBig = new Image(20, 20);
-mMinusBig.src = "img/minus-solid.svg"
-let bMinusBig = new Image(20, 20);
-bMinusBig.src = "img/minus-solid.svg"
-
+let add = new Image(20, 20);
+add.src = "img/plus-solid.svg"
+let minus = new Image(20, 20);
+minus.src = "img/minus-solid.svg"
 let fire = new Image(50, 50);
 fire.src = "img/rocket-solid.svg"
 
@@ -297,14 +267,14 @@ function drawInterface() {
   interfaceCtx.fillText("1", 300, 27);
   interfaceCtx.fillText("0.1", 207, 27);
   interfaceCtx.fillText("1", 180, 27);
-  interfaceCtx.drawImage(mAddSmall, 270, 40, 15, 15);
-  interfaceCtx.drawImage(bAddSmall, 270, 70, 15, 15);
-  interfaceCtx.drawImage(mMinusSmall, 210, 40, 15, 15);
-  interfaceCtx.drawImage(bMinusSmall, 210, 70, 15, 15);
-  interfaceCtx.drawImage(mAddBig, 300, 40, 15, 15);
-  interfaceCtx.drawImage(bAddBig, 300, 70, 15, 15);
-  interfaceCtx.drawImage(mMinusBig, 180, 40, 15, 15);
-  interfaceCtx.drawImage(bMinusBig, 180, 70, 15, 15);
+  interfaceCtx.drawImage(add, 270, 40, 15, 15);
+  interfaceCtx.drawImage(add, 270, 70, 15, 15);
+  interfaceCtx.drawImage(minus, 210, 40, 15, 15);
+  interfaceCtx.drawImage(minus, 210, 70, 15, 15);
+  interfaceCtx.drawImage(add, 300, 40, 15, 15);
+  interfaceCtx.drawImage(add, 300, 70, 15, 15);
+  interfaceCtx.drawImage(minus, 180, 40, 15, 15);
+  interfaceCtx.drawImage(minus, 180, 70, 15, 15);
   interfaceCtx.drawImage(fire, 375, 25, 50, 50);
 
   window.requestAnimationFrame(drawInterface);
@@ -358,6 +328,5 @@ function clicked(e){
     intercept -= 1.0;
   }
 }
-
 
 drawInterface();
