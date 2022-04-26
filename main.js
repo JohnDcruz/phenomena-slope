@@ -133,7 +133,7 @@ class Game {
     return 15 + (40 * this.random(0, 13));
   }
 
-  drawLine(canvas, ctx, slope, intercept) {
+  drawLine(canvas, ctx, slope, intercept) { //TODO: fix line disappearing
 
     let x2 = 0;
     let y2 = canvas.height - (intercept * 40);
@@ -141,7 +141,7 @@ class Game {
     let inc = 0;
     let maxY = 600;
 
-    if (intercept < 0) {
+    if (intercept < 0 || slope < 0) {
       maxY += 40 * Math.abs(intercept);
     }
 
@@ -198,8 +198,13 @@ function draw() {
 
   game.drawLine(canvas, ctx, slope, intercept);
 
-  game.tank.draw(ctx, canvas.height);
-  game.invader.draw(ctx);
+  if (!game.collidesInvader) {
+    game.invader.draw(ctx);
+  }
+
+  if (!game.collidesTank) {
+    game.tank.draw(ctx, canvas.height);
+  }
 
   if (game.checkInProgress) {
     if (game.missile.intersects(game.tank)) {
