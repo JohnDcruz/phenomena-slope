@@ -292,12 +292,14 @@ function clicked(e){
   let y = e.layerY;
 
   if(x>370 && x<430 && y>10 && y<80 && !game.checkInProgress){
-    //TODO: make sure missile fires if y starts negative
     if (slope === 0) {
       game.missile = new Missile(0, canvas.height - (intercept * 40), 1, 0);
+    } else if (intercept < 0) {
+      game.missile = new Missile(Math.abs((intercept * 40)/slope), canvas.height, 1/slope, 1);
     } else {
       game.missile = new Missile(0, canvas.height - (intercept * 40), 1/slope, 1);
     }
+
     game.checkInProgress = true;
   }
 
