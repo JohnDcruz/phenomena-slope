@@ -139,8 +139,13 @@ class Game {
     let y2 = canvas.height - (intercept * 40);
 
     let inc = 0;
+    let maxY = 600;
 
-    while (inc < 1000) { //TODO: extend line properly
+    if (intercept < 0) {
+      maxY += 40 * Math.abs(intercept);
+    }
+
+    while (inc < maxY) {
       if (slope !== 0) {
         x2 += Math.abs(1/slope);
       }
