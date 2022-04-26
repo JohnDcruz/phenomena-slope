@@ -12,6 +12,11 @@ class Entity {
     ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
   }
 
+  move() {
+    this.x += 1;
+    this.y += 1;
+  }
+
   intersects(other) {
     let tw = this.width;
     let th = this.height;
@@ -51,8 +56,24 @@ class Tank extends Entity {
 }
 
 class Missile extends Entity {
-  constructor(x, y) {
+  constructor(x, y, dx, dy) {
     super("img/missile.png", x, y, 10, 30);
+    this.dx = dx;
+    this.dy = -dy;
+  }
+
+  move() {
+    this.x += this.dx;
+    this.y += this.dy;
+  }
+
+  draw(ctx) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(Math.atan(this.dx/-this.dy));
+    ctx.translate(-this.x, -this.y);
+    super.draw(ctx);
+    ctx.restore();
   }
 }
 
@@ -63,7 +84,9 @@ class Game {
 
     this.invadersHit = 0;
     this.createInvader();
-    this.coordinates = {};
+
+    this.collidesInvader = false;
+    this.collidesTank = false;
   }
 
   createInvader() {
@@ -133,8 +156,6 @@ class Game {
 
     let inc = 0;
 
-    this.coordinates[x2] = y2;
-
     while (inc < 1000) { //TODO: extend line properly
       if (slope !== 0) {
         x2 += Math.abs(1/slope);
@@ -148,8 +169,6 @@ class Game {
         y2 += 1;
       }
       inc += 1;
-
-      this.coordinates[Math.round(x2)] = Math.round(y2);
     }
 
     ctx.save();
@@ -160,27 +179,6 @@ class Game {
     ctx.lineWidth = 5;
     ctx.stroke();
     ctx.restore();
-  }
-
-  checkCollision() {
-
-    let collidesTank = false;
-    let collidesInvader = false;
-
-    for (const [x, y] of Object.entries(this.coordinates)) {
-
-      let missile = new Missile(x, y);
-
-      if (missile.intersects(this.tank)) {
-        collidesTank = true;
-      }
-
-      if (missile.intersects(this.invader)) {
-        collidesInvader = true;
-      }
-    }
-
-    return collidesTank && collidesInvader;
   }
 }
 
@@ -214,6 +212,35 @@ function draw() {
   game.tank.draw(ctx, canvas.height);
   game.invader.draw(ctx);
 
+  if (game.checkInProgress) {
+    if (game.missile.intersects(game.tank)) {
+      game.collidesTank = true;
+    }
+
+    if (game.missile.intersects(game.invader)) {
+      game.collidesInvader = true;
+    }
+
+    if (game.missile.y < 0 || game.missile.y > 600 || game.missile.x < 0 || game.missile.x > 480) {
+      game.checkInProgress = false;
+      game.collidesTank = false;
+      game.collidesInvader = false;
+    } else {
+      game.missile.move();
+      game.missile.draw(ctx);
+    }
+
+  }
+
+  if (game.collidesInvader && game.collidesTank) {
+    game.invadersHit += 1;
+    game.tank = new Tank(game.getXCoordinate(), game.getYCoordinate());
+    game.invader = new Invader(game.getXCoordinate(), game.getYCoordinate());
+    game.checkInProgress = false;
+    game.collidesTank = false;
+    game.collidesInvader = false;
+  }
+
   game.writeText(ctx);
   window.requestAnimationFrame(draw);
 }
@@ -226,10 +253,10 @@ function drawHeader() {
   headerCtx.clearRect(0, 0, 480, 100);
   headerCtx.font = "16px Arial";
   headerCtx.fillStyle = "#ffffff";
-  headerCtx.fillText("The properties of a line, slope and y-intercept, are related in the", 10, 25);
-  headerCtx.fillText("formula y=mx+b, where m is the slope and b is the y-intercept.", 10, 45);
-  headerCtx.fillText("Find the formula for a line that intersects both the spaceship and", 10, 65);
-  headerCtx.fillText("UFO so that the spaceship can accurately fire a missile!", 10, 85);
+  headerCtx.fillText("Find the formula for a line that intersects both the spaceship and", 10, 25);
+  headerCtx.fillText("UFO so that the missile hits both of them.", 10, 45);
+  headerCtx.fillText("Use the controls below to increment or decrement the slope and", 10, 65);
+  headerCtx.fillText("intercept, and press the rocket to see if you're correct!", 10, 85);
   window.requestAnimationFrame(drawHeader);
 }
 drawHeader();
@@ -262,13 +289,13 @@ function drawInterface() {
   interfaceCtx.clearRect(0, 0, 480, 100);
   interfaceCtx.font = "16px Arial";
   interfaceCtx.fillStyle = "#ffffff";
-  interfaceCtx.fillText("y = " + slope.toFixed(1) + " + " + intercept.toFixed(1), 40, 35);
+  interfaceCtx.fillText("y = " + slope.toFixed(1) + "x + " + intercept.toFixed(1), 35, 35);
   interfaceCtx.fillText("score: " + game.invadersHit, 55, 75);
   interfaceCtx.fillText("m", 240, 52);
   interfaceCtx.fillText("b", 242, 82);
-  interfaceCtx.fillText(".1", 270, 27);
+  interfaceCtx.fillText("0.1", 265, 27);
   interfaceCtx.fillText("1", 300, 27);
-  interfaceCtx.fillText(".1", 210, 27);
+  interfaceCtx.fillText("0.1", 207, 27);
   interfaceCtx.fillText("1", 180, 27);
   interfaceCtx.drawImage(mAddSmall, 270, 40, 15, 15);
   interfaceCtx.drawImage(bAddSmall, 270, 70, 15, 15);
@@ -289,10 +316,14 @@ function clicked(e){
   let x = e.layerX;
   let y = e.layerY;
 
-  if(x>370 && x<430 && y>10 && y<80){
-    if (game.checkCollision()) {
-      game.invadersHit += 1;
+  if(x>370 && x<430 && y>10 && y<80 && !game.checkInProgress){
+    //TODO: make sure missile fires if y starts negative
+    if (slope === 0) {
+      game.missile = new Missile(0, canvas.height - (intercept * 40), 1, 0);
+    } else {
+      game.missile = new Missile(0, canvas.height - (intercept * 40), 1/slope, 1);
     }
+    game.checkInProgress = true;
   }
 
   if(x>260 && x<290 && y>40 && y<60){
